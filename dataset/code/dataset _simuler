@@ -1,0 +1,165 @@
+import sqlite3
+import random
+from datetime import datetime, timedelta
+
+conn = sqlite3.connect("dataset/pharmacieee.db")
+cursor = conn.cursor()
+
+BOITES_PAR_PERSONNE = 12.26
+DEPENSE_PAR_PERSONNE = 500
+
+# RÉGIONS
+regions = ["Rabat-Salé-Kénitra", "Casablanca-Settat"]
+for r in regions:
+    cursor.execute("INSERT INTO regions (nom_region) VALUES (?)", (r,))
+
+#  VILLES
+villes = [
+    ("Rabat", 1), ("Kénitra", 1), ("Salé", 1), ("Témara", 1),
+    ("Casablanca", 2), ("Mohammedia", 2), ("El jadida", 2), ("Settat", 2)
+]
+cursor.executemany("INSERT INTO villes (nom_ville, id_region) VALUES (?,?)", villes)
+
+#  GROSSISTES
+grossistes = [
+    ("Grossiste 1", 1, 5000),
+    ("Grossiste 2", 2, 4500)
+]
+cursor.executemany(
+    "INSERT INTO grossistes (nom_grossiste,id_region,capacite_livraison) VALUES (?,?,?)",
+    grossistes
+)
+
+# MÉDICAMENTS (distribution réelle)
+medicaments = []
+
+# 91.7% T1
+for i in range(30):
+    medicaments.append((f"Med_T1_{i}", "T1", random.randint(20,165)))
+
+# 7% T2
+for i in range(10):
+    medicaments.append((f"Med_T2_{i}", "T2", random.randint(166,588)))
+
+# 1.3% T3 + T4
+for i in range(3):
+    medicaments.append((f"Med_T3_{i}", "T3", random.randint(589,1756)))
+
+for i in range(2):
+    medicaments.append((f"Med_T4_{i}", "T4", random.randint(1757,4000)))
+
+cursor.executemany(
+    "INSERT INTO medicaments (nom,categorie,pfht) VALUES (?,?,?)",
+    medicaments
+)
+
+#  PHARMACIES
+for i in range(1, 7):
+    stock = random.randint(800,1200)
+    marge = random.uniform(20,30)
+    cursor.execute("""
+        INSERT INTO pharmacies (nom,id_ville,id_region,id_grossiste,stock,marge)
+        VALUES (?,?,?,?,?,?)
+    """, (f"Pharma_{i}", i, 1 if i<=3 else 2, 1 if i<=3 else 2, stock, marge))
+
+# PATIENTS (consommation réaliste)
+def consommation():
+    return max(1, int(random.gauss(12.26, 3)))
+
+for i in range(500):
+
+    #choisir une ville aléatoire
+    cursor.execute("SELECT id_ville FROM villes")
+    villes = cursor.fetchall()
+    id_ville = random.choice(villes)[0]
+
+    # choisir une pharmacie de cette ville
+    cursor.execute("""
+        SELECT id_pharmacie 
+        FROM pharmacies 
+        WHERE id_ville = ?
+    """, (id_ville,))
+
+    pharmacies = cursor.fetchall()
+
+    if len(pharmacies) == 0:
+        continue
+
+    id_pharmacie = random.choice(pharmacies)[0]
+
+    #  insertion patient
+    cursor.execute("""
+        INSERT INTO patients 
+        (nom, id_ville, id_pharmacie, consommation_annuelle_boites, depense_annuelle)
+        VALUES (?,?,?,?,?)
+    """, (
+        f"Patient_{i}",
+        id_ville,
+        id_pharmacie,
+        consommation(),
+        DEPENSE_PAR_PERSONNE
+    ))
+
+#  MARGE RÉELLE
+def calcul_marge(prix, cat):
+    if cat == "T1":
+        return prix * 0.3393
+    elif cat == "T2":
+        return prix * 0.2974
+    elif cat == "T3":
+        return 300
+    else:
+        return 400
+
+# VENTES 
+cursor.execute("SELECT id_patient, id_ville, consommation_annuelle_boites FROM patients")
+patients = cursor.fetchall()
+
+cursor.execute("SELECT * FROM medicaments")
+meds = cursor.fetchall()
+
+date_debut = datetime(2024,1,1)
+
+for p in patients:
+    id_patient, id_ville, nb_achats = p
+    
+    for _ in range(int(nb_achats)):
+        
+        med = random.choice(meds)
+        id_med, nom, cat, prix = med
+        
+        quantite = random.choices([1,2,3], weights=[70,25,5])[0]
+        
+        marge = calcul_marge(prix, cat)
+        prix_vente = (prix + marge) * quantite
+        
+        date = date_debut + timedelta(days=random.randint(0,365))
+        
+        # saison simple
+        mois = date.month
+        if mois in [12,1,2]:
+            season = "hiver"
+        elif mois in [6,7,8]:
+            season = "été"
+        else:
+            season = "printemps/automne"
+        
+        cursor.execute("""
+            INSERT INTO ventes 
+            (id_patient,id_pharmacie,id_medicament,quantite,prix_vente,categorie,date_vente)
+            VALUES (?,?,?,?,?,?,?)
+        """, (
+            id_patient,
+            random.randint(1,6),
+            id_med,
+            quantite,
+            round(prix_vente,2),
+            cat,
+            date.strftime("%Y-%m-%d")
+        ))
+
+
+conn.commit()
+conn.close()
+
+print(" Base remplie avec données réalistes Maroc")
