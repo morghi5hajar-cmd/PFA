@@ -3,26 +3,46 @@ import random
 from datetime import datetime, timedelta
 
 # Configuration
+<<<<<<< HEAD
 DB_PATH = r"C:\Users\aitta\Downloads\PFA.rar\PFA\PFA\dataset\pharmacieee.db"
+=======
+DB_PATH = "dataset/pharmacieee.db"
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
 BOITES_PAR_PERSONNE = 12.26
 DEPENSE_PAR_PERSONNE = 500
 NOMBRE_PATIENTS = 500
 ANNEE = 2024
 
 def consommation():
+<<<<<<< HEAD
     return max(1, int(random.gauss(BOITES_PAR_PERSONNE, 3)))
 
 def calcul_marge(prix, cat):
+=======
+    """Génère une consommation annuelle réaliste en boîtes"""
+    return max(1, int(random.gauss(BOITES_PAR_PERSONNE, 3)))
+
+def calcul_marge(prix, cat):
+    """Calcule la marge selon la catégorie du médicament"""
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
     if cat == "T1":
         return prix * 0.3393
     elif cat == "T2":
         return prix * 0.2974
     elif cat == "T3":
         return 300
+<<<<<<< HEAD
     else:
         return 400
 
 def get_saison(mois):
+=======
+    else:  # T4
+        return 400
+
+def get_saison(mois):
+    """Retourne la saison selon le mois"""
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
     if mois in [12, 1, 2]:
         return "hiver"
     elif mois in [6, 7, 8]:
@@ -30,6 +50,7 @@ def get_saison(mois):
     else:
         return "printemps/automne"
 
+<<<<<<< HEAD
 conn = None
 try:
     conn = sqlite3.connect(DB_PATH)
@@ -37,6 +58,13 @@ try:
 
     # Suppression des tables existantes
     cursor.execute("DROP TABLE IF EXISTS approvisionnement")
+=======
+try:
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+ 
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
     cursor.execute("DROP TABLE IF EXISTS ventes")
     cursor.execute("DROP TABLE IF EXISTS patients")
     cursor.execute("DROP TABLE IF EXISTS pharmacies")
@@ -44,16 +72,27 @@ try:
     cursor.execute("DROP TABLE IF EXISTS grossistes")
     cursor.execute("DROP TABLE IF EXISTS villes")
     cursor.execute("DROP TABLE IF EXISTS regions")
+<<<<<<< HEAD
 
     # ── CRÉATION DES TABLES ──────────────────────────────────────────
 
+=======
+    
+    
+    # RÉGIONS
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
     cursor.execute("""
         CREATE TABLE regions (
             id_region INTEGER PRIMARY KEY AUTOINCREMENT,
             nom_region TEXT NOT NULL
         )
     """)
+<<<<<<< HEAD
 
+=======
+    
+    # VILLES
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
     cursor.execute("""
         CREATE TABLE villes (
             id_ville INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,7 +101,12 @@ try:
             FOREIGN KEY (id_region) REFERENCES regions(id_region)
         )
     """)
+<<<<<<< HEAD
 
+=======
+    
+    # GROSSISTES
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
     cursor.execute("""
         CREATE TABLE grossistes (
             id_grossiste INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -72,7 +116,12 @@ try:
             FOREIGN KEY (id_region) REFERENCES regions(id_region)
         )
     """)
+<<<<<<< HEAD
 
+=======
+    
+    # MÉDICAMENTS
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
     cursor.execute("""
         CREATE TABLE medicaments (
             id_medicament INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -81,7 +130,12 @@ try:
             pfht REAL
         )
     """)
+<<<<<<< HEAD
 
+=======
+    
+    # PHARMACIES
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
     cursor.execute("""
         CREATE TABLE pharmacies (
             id_pharmacie INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -96,7 +150,12 @@ try:
             FOREIGN KEY (id_grossiste) REFERENCES grossistes(id_grossiste)
         )
     """)
+<<<<<<< HEAD
 
+=======
+    
+    # PATIENTS
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
     cursor.execute("""
         CREATE TABLE patients (
             id_patient INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -109,7 +168,12 @@ try:
             FOREIGN KEY (id_pharmacie) REFERENCES pharmacies(id_pharmacie)
         )
     """)
+<<<<<<< HEAD
 
+=======
+    
+    # VENTES
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
     cursor.execute("""
         CREATE TABLE ventes (
             id_vente INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -126,6 +190,7 @@ try:
             FOREIGN KEY (id_medicament) REFERENCES medicaments(id_medicament)
         )
     """)
+<<<<<<< HEAD
 
     cursor.execute("""
         CREATE TABLE approvisionnement (
@@ -148,12 +213,27 @@ try:
     cursor.executemany("INSERT INTO regions (nom_region) VALUES (?)",
                        [(r,) for r in regions])
 
+=======
+    
+    
+    # INSERTION DES DONNÉES 
+    
+    regions = ["Rabat-Salé-Kénitra", "Casablanca-Settat"]
+    cursor.executemany("INSERT INTO regions (nom_region) VALUES (?)", 
+                       [(r,) for r in regions])
+    
+    
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
     villes = [
         ("Rabat", 1), ("Kénitra", 1), ("Salé", 1), ("Témara", 1),
         ("Casablanca", 2), ("Mohammedia", 2), ("El Jadida", 2), ("Settat", 2)
     ]
     cursor.executemany("INSERT INTO villes (nom_ville, id_region) VALUES (?,?)", villes)
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
     grossistes = [
         ("Grossiste Rabat", 1, 5000),
         ("Grossiste Casa", 2, 4500)
@@ -162,6 +242,7 @@ try:
         "INSERT INTO grossistes (nom_grossiste, id_region, capacite_livraison) VALUES (?,?,?)",
         grossistes
     )
+<<<<<<< HEAD
 
     medicaments = []
     for i in range(30):
@@ -173,19 +254,53 @@ try:
     for i in range(2):
         medicaments.append((f"Med_T4_{i}", "T4", random.randint(1757, 4000)))
 
+=======
+    
+    medicaments = []
+    
+    # 91.7% T1
+    for i in range(30):
+        medicaments.append((f"Med_T1_{i}", "T1", random.randint(20, 165)))
+    
+    # 7% T2
+    for i in range(10):
+        medicaments.append((f"Med_T2_{i}", "T2", random.randint(166, 588)))
+    
+    # 1.3% T3
+    for i in range(3):
+        medicaments.append((f"Med_T3_{i}", "T3", random.randint(589, 1756)))
+    
+    # T4
+    for i in range(2):
+        medicaments.append((f"Med_T4_{i}", "T4", random.randint(1757, 4000)))
+    
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
     cursor.executemany(
         "INSERT INTO medicaments (nom, categorie, pfht) VALUES (?,?,?)",
         medicaments
     )
 
+<<<<<<< HEAD
     cursor.execute("SELECT id_ville, nom_ville, id_region FROM villes")
     villes_data = cursor.fetchall()
 
+=======
+    # Récupérer toutes les villes avec leur région
+    cursor.execute("SELECT id_ville, nom_ville, id_region FROM villes")
+    villes_data = cursor.fetchall()
+    
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
     pharmacies_data = []
     for id_ville, nom_ville, id_region in villes_data:
         stock = random.randint(800, 1200)
         marge = random.uniform(20, 30)
+<<<<<<< HEAD
         id_grossiste = id_region
+=======
+        
+        id_grossiste = id_region
+        
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
         pharmacies_data.append((
             f"Pharmacie {nom_ville}",
             id_ville,
@@ -194,11 +309,16 @@ try:
             stock,
             round(marge, 2)
         ))
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
     cursor.executemany("""
         INSERT INTO pharmacies (nom, id_ville, id_region, id_grossiste, stock, marge)
         VALUES (?,?,?,?,?,?)
     """, pharmacies_data)
+<<<<<<< HEAD
 
     patients_data = []
     for i in range(NOMBRE_PATIENTS):
@@ -213,6 +333,33 @@ try:
             pharmacies_list = cursor.fetchall()
 
         id_pharmacie = random.choice(pharmacies_list)[0]
+=======
+    
+    patients_data = []
+    
+    for i in range(NOMBRE_PATIENTS):
+        # Choisir une ville aléatoire
+        cursor.execute("SELECT id_ville FROM villes")
+        villes_list = cursor.fetchall()
+        id_ville = random.choice(villes_list)[0]
+        
+        # Choisir une pharmacie de cette ville
+        cursor.execute("""
+            SELECT id_pharmacie 
+            FROM pharmacies 
+            WHERE id_ville = ?
+        """, (id_ville,))
+        
+        pharmacies_list = cursor.fetchall()
+        
+        if len(pharmacies_list) == 0:
+            # Si pas de pharmacie dans cette ville, en choisir une autre
+            cursor.execute("SELECT id_pharmacie FROM pharmacies")
+            pharmacies_list = cursor.fetchall()
+        
+        id_pharmacie = random.choice(pharmacies_list)[0]
+        
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
         patients_data.append((
             f"Patient_{i+1}",
             id_ville,
@@ -220,6 +367,7 @@ try:
             consommation(),
             DEPENSE_PAR_PERSONNE
         ))
+<<<<<<< HEAD
 
     cursor.executemany("""
         INSERT INTO patients
@@ -250,6 +398,51 @@ try:
             ventes_data.append((
                 id_patient,
                 id_pharmacie,
+=======
+    
+    cursor.executemany("""
+        INSERT INTO patients 
+        (nom, id_ville, id_pharmacie, consommation_annuelle_boites, depense_annuelle)
+        VALUES (?,?,?,?,?)
+    """, patients_data)
+    
+
+    # Récupérer tous les patients
+    cursor.execute("""
+        SELECT id_patient, id_ville, id_pharmacie, consommation_annuelle_boites 
+        FROM patients
+    """)
+    patients_list = cursor.fetchall()
+    
+    # Récupérer tous les médicaments
+    cursor.execute("SELECT id_medicament, nom, categorie, pfht FROM medicaments")
+    meds = cursor.fetchall()
+    
+    date_debut = datetime(ANNEE, 1, 1)
+    ventes_data = []
+    
+    for id_patient, id_ville, id_pharmacie, nb_achats in patients_list:
+        for _ in range(int(nb_achats)):
+            # Choisir un médicament aléatoire
+            id_med, nom, cat, prix = random.choice(meds)
+            
+            # Quantité (70% = 1 boîte, 25% = 2 boîtes, 5% = 3 boîtes)
+            quantite = random.choices([1, 2, 3], weights=[70, 25, 5])[0]
+            
+            # Calcul du prix de vente
+            marge = calcul_marge(prix, cat)
+            prix_vente = (prix + marge) * quantite
+            
+            # Date aléatoire dans l'année
+            date_vente = date_debut + timedelta(days=random.randint(0, 365))
+            
+            # Déterminer la saison
+            saison = get_saison(date_vente.month)
+            
+            ventes_data.append((
+                id_patient,
+                id_pharmacie,  # Utilise la pharmacie du patient
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
                 id_med,
                 quantite,
                 round(prix_vente, 2),
@@ -257,11 +450,18 @@ try:
                 date_vente.strftime("%Y-%m-%d"),
                 saison
             ))
+<<<<<<< HEAD
 
+=======
+    
+    # Insertion par batch pour optimiser
+    
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
     batch_size = 500
     for i in range(0, len(ventes_data), batch_size):
         batch = ventes_data[i:i + batch_size]
         cursor.executemany("""
+<<<<<<< HEAD
             INSERT INTO ventes
             (id_patient, id_pharmacie, id_medicament, quantite, prix_vente,
              categorie, date_vente, saison)
@@ -331,18 +531,61 @@ try:
 
     # ────────────────────────────────────────────────────────────────
     conn.commit()
+=======
+            INSERT INTO ventes 
+            (id_patient, id_pharmacie, id_medicament, quantite, prix_vente, 
+             categorie, date_vente, saison)
+            VALUES (?,?,?,?,?,?,?,?)
+        """, batch)
+    
+    # =========================
+# POURCENTAGE DES CATÉGORIES
+# =========================
+
+    cursor.execute("""
+    SELECT categorie, COUNT(*) 
+    FROM medicaments
+    GROUP BY categorie
+""")
+
+    resultats = cursor.fetchall()
+
+# Total médicaments
+    cursor.execute("SELECT COUNT(*) FROM medicaments")
+    total = cursor.fetchone()[0]
+
+    print("\n POURCENTAGE DES CATÉGORIES DE MÉDICAMENTS")
+    print("-" * 50)
+
+    for categorie, nombre in resultats:
+         pourcentage = (nombre / total) * 100
+         print(f"{categorie} : {nombre} médicaments ({pourcentage:.2f}%)")
+    
+    conn.commit()
+    
+    
+    
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
     print(" Base de données remplie avec succès ")
 
 except sqlite3.Error as e:
     print(f" Erreur SQLite : {e}")
     if conn:
         conn.rollback()
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
 except Exception as e:
     print(f" Erreur générale : {e}")
     if conn:
         conn.rollback()
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 4b2f3801aeb8ec16945c8aa209e270b28ed91fad
 finally:
     if conn:
         conn.close()
