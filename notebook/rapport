@@ -1,0 +1,2239 @@
+const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, 
+        AlignmentType, HeadingLevel, BorderStyle, WidthType, ShadingType,
+        PageBreak, TableOfContents, TabStopType, TabStopPosition } = require('docx');
+const fs = require('fs');
+
+// Configuration des bordures pour les tableaux
+const border = { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" };
+const borders = { top: border, bottom: border, left: border, right: border };
+
+// Configuration des bordures épaisses pour les en-têtes
+const thickBorder = { style: BorderStyle.SINGLE, size: 6, color: "2E75B6" };
+const headerBorders = { 
+    top: thickBorder, 
+    bottom: thickBorder, 
+    left: border, 
+    right: border 
+};
+
+const doc = new Document({
+    styles: {
+        default: { 
+            document: { 
+                run: { font: "Arial", size: 22 }  // 11pt par défaut
+            } 
+        },
+        paragraphStyles: [
+            {
+                id: "Heading1",
+                name: "Heading 1",
+                basedOn: "Normal",
+                next: "Normal",
+                quickFormat: true,
+                run: { size: 32, bold: true, font: "Arial", color: "2E75B6" },
+                paragraph: { 
+                    spacing: { before: 360, after: 240 }, 
+                    outlineLevel: 0,
+                    border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: "2E75B6", space: 1 } }
+                }
+            },
+            {
+                id: "Heading2",
+                name: "Heading 2",
+                basedOn: "Normal",
+                next: "Normal",
+                quickFormat: true,
+                run: { size: 28, bold: true, font: "Arial", color: "2E75B6" },
+                paragraph: { spacing: { before: 280, after: 200 }, outlineLevel: 1 }
+            },
+            {
+                id: "Heading3",
+                name: "Heading 3",
+                basedOn: "Normal",
+                next: "Normal",
+                quickFormat: true,
+                run: { size: 24, bold: true, font: "Arial", color: "444444" },
+                paragraph: { spacing: { before: 240, after: 160 }, outlineLevel: 2 }
+            }
+        ]
+    },
+    
+    numbering: {
+        config: [
+            {
+                reference: "bullets",
+                levels: [{
+                    level: 0,
+                    format: "bullet",
+                    text: "•",
+                    alignment: AlignmentType.LEFT,
+                    style: {
+                        paragraph: { indent: { left: 720, hanging: 360 } }
+                    }
+                }]
+            }
+        ]
+    },
+    
+    sections: [{
+        properties: {
+            page: {
+                size: { width: 12240, height: 15840 },
+                margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 }
+            }
+        },
+        children: [
+            // PAGE DE GARDE
+            new Paragraph({
+                children: [new TextRun("")],
+                spacing: { before: 2880 }
+            }),
+            new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 240 },
+                children: [new TextRun({
+                    text: "RAPPORT D'ANALYSE EXPLORATOIRE",
+                    bold: true,
+                    size: 40,
+                    font: "Arial",
+                    color: "2E75B6"
+                })]
+            }),
+            new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 480 },
+                children: [new TextRun({
+                    text: "Secteur Pharmaceutique Marocain",
+                    bold: true,
+                    size: 32,
+                    font: "Arial"
+                })]
+            }),
+            new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 1440 },
+                children: [new TextRun({
+                    text: "Année 2024",
+                    size: 28,
+                    font: "Arial",
+                    italics: true
+                })]
+            }),
+            
+            // Informations du document
+            new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 2880, after: 160 },
+                children: [new TextRun({
+                    text: "📊 Données & KPI Essentiels",
+                    size: 24,
+                    font: "Arial"
+                })]
+            }),
+            new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 160 },
+                children: [new TextRun({
+                    text: "📈 Performance Commerciale",
+                    size: 24,
+                    font: "Arial"
+                })]
+            }),
+            new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 160 },
+                children: [new TextRun({
+                    text: "🗺️ Analyse Géographique",
+                    size: 24,
+                    font: "Arial"
+                })]
+            }),
+            new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 160 },
+                children: [new TextRun({
+                    text: "👥 Segmentation Clients",
+                    size: 24,
+                    font: "Arial"
+                })]
+            }),
+            new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 1440 },
+                children: [new TextRun({
+                    text: "🚛 Chaîne Logistique",
+                    size: 24,
+                    font: "Arial"
+                })]
+            }),
+            
+            new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 1440 },
+                border: { top: { style: BorderStyle.SINGLE, size: 6, color: "2E75B6", space: 1 } },
+                children: [new TextRun({
+                    text: "\nRapport confidentiel - Usage interne uniquement",
+                    size: 20,
+                    font: "Arial",
+                    italics: true,
+                    color: "666666"
+                })]
+            }),
+            
+            // SAUT DE PAGE
+            new Paragraph({ children: [new PageBreak()] }),
+            
+            // TABLE DES MATIÈRES
+            new Paragraph({
+                heading: HeadingLevel.HEADING_1,
+                children: [new TextRun("TABLE DES MATIÈRES")]
+            }),
+            new TableOfContents("Sommaire", {
+                hyperlink: true,
+                headingStyleRange: "1-3"
+            }),
+            
+            new Paragraph({ children: [new PageBreak()] }),
+            
+            // 1. RÉSUMÉ EXÉCUTIF
+            new Paragraph({
+                heading: HeadingLevel.HEADING_1,
+                children: [new TextRun("1. RÉSUMÉ EXÉCUTIF")]
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [new TextRun("🎯 Objectifs de l'Analyse")]
+            }),
+            new Paragraph({
+                spacing: { after: 160 },
+                children: [new TextRun("Cette analyse exploratoire vise à comprendre :")]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Les dynamiques de vente dans le secteur pharmaceutique marocain")]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Les performances des pharmacies et grossistes")]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Les comportements de consommation des patients")]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                spacing: { after: 240 },
+                children: [new TextRun("L'efficacité de la chaîne d'approvisionnement")]
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [new TextRun("📊 Principaux Indicateurs (KPIs)")]
+            }),
+            
+            // Tableau KPIs
+            new Table({
+                width: { size: 9360, type: WidthType.DXA },
+                columnWidths: [4680, 2340, 2340],
+                rows: [
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 4680, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 120, right: 120 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Indicateur", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 2340, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 120, right: 120 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Valeur", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 2340, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 120, right: 120 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Commentaire", bold: true, color: "FFFFFF" })]
+                                })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders,
+                                width: { size: 4680, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "Chiffre d'Affaires Total", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 2340, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("~XXX DH")] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 2340, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("Performance globale")] })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders,
+                                width: { size: 4680, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "Profit Total", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 2340, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("~XXX DH")] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 2340, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("Après marges réglementées")] })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders,
+                                width: { size: 4680, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "Marge Moyenne", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 2340, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("XX.X%")] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 2340, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("Conforme réglementation")] })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders,
+                                width: { size: 4680, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "Nombre de Transactions", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 2340, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("~2,700")] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 2340, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("Volume annuel")] })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders,
+                                width: { size: 4680, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "Panier Moyen", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 2340, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("~XXX DH")] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 2340, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("Valeur par transaction")] })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders,
+                                width: { size: 4680, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "Nombre de Patients", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 2340, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("225")] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 2340, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("Base client active")] })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders,
+                                width: { size: 4680, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "Consommation Moyenne", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 2340, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("12.26 boîtes/an")] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 2340, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("Conforme données nationales")] })]
+                            })
+                        ]
+                    })
+                ]
+            }),
+            
+            new Paragraph({ children: [new PageBreak()] }),
+            
+            // 2. MÉTHODOLOGIE
+            new Paragraph({
+                heading: HeadingLevel.HEADING_1,
+                children: [new TextRun("2. MÉTHODOLOGIE")]
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [new TextRun("🔍 Sources de Données")]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun({ text: "Base de données relationnelle SQLite", bold: true })],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Période couverte : Année 2024 complète")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Périmètre géographique : 2 régions, 5 villes du Maroc")],
+                spacing: { after: 240 }
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [new TextRun("🛠️ Outils Utilisés")]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Python 3.x : Langage de programmation")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Pandas : Manipulation et analyse des données")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Matplotlib & Seaborn : Visualisations")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("SQLite3 : Requêtes sur base de données")],
+                spacing: { after: 240 }
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [new TextRun("📐 Calculs Clés")]
+            }),
+            new Paragraph({
+                spacing: { before: 160, after: 80 },
+                children: [new TextRun({ text: "CA = Prix de Vente", bold: true })]
+            }),
+            new Paragraph({
+                spacing: { after: 80 },
+                children: [new TextRun({ text: "Coût = PFHT × Quantité", bold: true })]
+            }),
+            new Paragraph({
+                spacing: { after: 80 },
+                children: [new TextRun({ text: "Profit = CA - Coût", bold: true })]
+            }),
+            new Paragraph({
+                spacing: { after: 80 },
+                children: [new TextRun({ text: "Marge Unitaire = Prix Unitaire - PFHT", bold: true })]
+            }),
+            new Paragraph({
+                spacing: { after: 240 },
+                children: [new TextRun({ text: "Taux de Marge = (Marge Unitaire / PFHT) × 100", bold: true })]
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [new TextRun("⚖️ Marges Réglementaires")]
+            }),
+            new Paragraph({
+                spacing: { after: 160 },
+                children: [new TextRun("Conformément à la réglementation marocaine (Source : Cour des Comptes) :")]
+            }),
+            
+            // Tableau marges
+            new Table({
+                width: { size: 9360, type: WidthType.DXA },
+                columnWidths: [2340, 3510, 3510],
+                rows: [
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 2340, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 120, right: 120 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Catégorie", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 3510, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 120, right: 120 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Plage de Prix (PFHT)", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 3510, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 120, right: 120 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Marge Réglementée", bold: true, color: "FFFFFF" })]
+                                })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders,
+                                width: { size: 2340, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "T1", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 3510, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("≤ 165 DH")] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 3510, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("+33.93%")] })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders,
+                                width: { size: 2340, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "T2", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 3510, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("166 - 588 DH")] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 3510, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("+29.74%")] })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders,
+                                width: { size: 2340, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "T3", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 3510, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("589 - 1756 DH")] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 3510, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("+300 DH fixe")] })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders,
+                                width: { size: 2340, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "T4", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 3510, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("> 1756 DH")] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 3510, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("+400 DH fixe")] })]
+                            })
+                        ]
+                    })
+                ]
+            }),
+            
+            new Paragraph({ children: [new PageBreak()] }),
+            
+            // 3. VUE D'ENSEMBLE
+            new Paragraph({
+                heading: HeadingLevel.HEADING_1,
+                children: [new TextRun("3. VUE D'ENSEMBLE DES DONNÉES")]
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [new TextRun("📦 Structure du Dataset")]
+            }),
+            new Paragraph({
+                spacing: { before: 160, after: 80 },
+                children: [new TextRun({ text: "Dimensions : ", bold: true }), new TextRun("XXX lignes × XX colonnes")]
+            }),
+            new Paragraph({
+                spacing: { after: 80 },
+                children: [new TextRun({ text: "Période : ", bold: true }), new TextRun("01/01/2024 - 31/12/2024")]
+            }),
+            new Paragraph({
+                spacing: { after: 240 },
+                children: [new TextRun({ text: "Granularité : ", bold: true }), new TextRun("Transaction individuelle")]
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [new TextRun("✅ Qualité des Données")]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun({ text: "Valeurs manquantes : ", bold: true }), new TextRun("0 (aucune)")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun({ text: "Doublons : ", bold: true }), new TextRun("0 détectés")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun({ text: "Cohérence : ", bold: true }), new TextRun("Toutes les transactions liées à des entités valides")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun({ text: "Intégrité référentielle : ", bold: true }), new TextRun("100% respectée")],
+                spacing: { after: 240 }
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [new TextRun("📊 Distribution des Variables Clés")]
+            }),
+            new Paragraph({
+                heading: HeadingLevel.HEADING_3,
+                children: [new TextRun("Distribution de la Quantité")]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun({ text: "70% ", bold: true }), new TextRun("des ventes concernent 1 seule boîte")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun({ text: "25% ", bold: true }), new TextRun("concernent 2 boîtes")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun({ text: "5% ", bold: true }), new TextRun("concernent 3 boîtes ou plus")],
+                spacing: { after: 160 }
+            }),
+            new Paragraph({
+                spacing: { after: 240 },
+                children: [
+                    new TextRun({ text: "➡️ Interprétation : ", bold: true }),
+                    new TextRun("Achats majoritairement ponctuels, peu de stockage par les patients")
+                ]
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_3,
+                children: [new TextRun("Distribution du Chiffre d'Affaires")]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Distribution asymétrique (right-skewed)")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Majorité des transactions < XXX DH")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Quelques transactions très élevées (médicaments T3-T4)")],
+                spacing: { after: 160 }
+            }),
+            new Paragraph({
+                spacing: { after: 240 },
+                children: [
+                    new TextRun({ text: "➡️ Interprétation : ", bold: true }),
+                    new TextRun("Segmentation claire entre médicaments courants et spécialisés")
+                ]
+            }),
+            
+            new Paragraph({ children: [new PageBreak()] }),
+            
+            // 4. ANALYSE COMMERCIALE
+            new Paragraph({
+                heading: HeadingLevel.HEADING_1,
+                children: [new TextRun("4. ANALYSE DES PERFORMANCES COMMERCIALES")]
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [new TextRun("💰 Analyse de la Profitabilité")]
+            }),
+            new Paragraph({
+                heading: HeadingLevel.HEADING_3,
+                children: [new TextRun("Profit par Catégorie de Médicaments")]
+            }),
+            
+            // Tableau profitabilité
+            new Table({
+                width: { size: 9360, type: WidthType.DXA },
+                columnWidths: [1500, 1500, 1500, 1500, 1500, 1860],
+                rows: [
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1500, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 80, right: 80 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Catégorie", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1500, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 80, right: 80 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Volume (%)", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1500, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 80, right: 80 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "CA (%)", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1500, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 80, right: 80 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Profit (%)", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1500, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 80, right: 80 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Marge Moy.", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1860, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 80, right: 80 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Stratégie", bold: true, color: "FFFFFF" })]
+                                })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders, width: { size: 1500, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "T1", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1500, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("80%")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1500, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XX%")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1500, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XX%")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1500, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("33.93%")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1860, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "Volume élevé", size: 20 })] })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders, width: { size: 1500, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "T2", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1500, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("15%")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1500, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XX%")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1500, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XX%")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1500, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("29.74%")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1860, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "Équilibre", size: 20 })] })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders, width: { size: 1500, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "T3", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1500, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("4%")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1500, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XX%")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1500, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XX%")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1500, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("Variable")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1860, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "Haute valeur", size: 20 })] })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders, width: { size: 1500, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "T4", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1500, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("1%")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1500, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XX%")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1500, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XX%")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1500, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("Variable")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1860, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "Très haute valeur", size: 20 })] })]
+                            })
+                        ]
+                    })
+                ]
+            }),
+            
+            new Paragraph({
+                spacing: { before: 240, after: 80 },
+                children: [new TextRun({ text: "🔍 Insights :", bold: true, size: 24 })]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Les médicaments T1 génèrent le volume mais avec une marge limitée")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Les catégories T3-T4 sont les plus rentables en valeur absolue")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("La réglementation marocaine protège l'accessibilité (marges % décroissantes)")],
+                spacing: { after: 240 }
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [new TextRun("📈 Courbe de Pareto (Principe 80/20)")]
+            }),
+            new Paragraph({
+                heading: HeadingLevel.HEADING_3,
+                children: [new TextRun("Concentration des Ventes")]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("20% des médicaments génèrent ~XX% du CA total")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Top 10 produits représentent XX% du volume")],
+                spacing: { after: 160 }
+            }),
+            new Paragraph({
+                spacing: { after: 240 },
+                children: [
+                    new TextRun({ text: "➡️ Gestion des stocks : ", bold: true }),
+                    new TextRun("Optimisation possible sur produits phares")
+                ]
+            }),
+            
+            new Paragraph({ children: [new PageBreak()] }),
+            
+            // 5. ANALYSE GÉOGRAPHIQUE
+            new Paragraph({
+                heading: HeadingLevel.HEADING_1,
+                children: [new TextRun("5. ANALYSE GÉOGRAPHIQUE")]
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [new TextRun("🗺️ Performance par Région")]
+            }),
+            
+            // Tableau régions
+            new Table({
+                width: { size: 9360, type: WidthType.DXA },
+                columnWidths: [2800, 1640, 1640, 1640, 1640],
+                rows: [
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 2800, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 120, right: 120 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Région", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1640, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 120, right: 120 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "CA Total", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1640, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 120, right: 120 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Nb Pharmacies", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1640, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 120, right: 120 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "CA/Pharmacie", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1640, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 120, right: 120 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Part Marché", bold: true, color: "FFFFFF" })]
+                                })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders,
+                                width: { size: 2800, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "Casablanca-Settat", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 1640, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("XXX DH")] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 1640, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("6")] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 1640, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("XXX DH")] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 1640, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("XX%")] })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders,
+                                width: { size: 2800, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "Rabat-Salé-Kénitra", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 1640, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("XXX DH")] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 1640, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("4")] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 1640, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("XXX DH")] })]
+                            }),
+                            new TableCell({
+                                borders,
+                                width: { size: 1640, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                                children: [new Paragraph({ children: [new TextRun("XX%")] })]
+                            })
+                        ]
+                    })
+                ]
+            }),
+            
+            new Paragraph({
+                spacing: { before: 240, after: 80 },
+                children: [new TextRun({ text: "🔍 Insights :", bold: true, size: 24 })]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Casablanca-Settat domine avec XX% du CA total")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Performance cohérente avec la densité démographique régionale")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("CA moyen par pharmacie similaire ➡️ marché équilibré")],
+                spacing: { after: 240 }
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [new TextRun("🏙️ Top 5 Villes par Performance")]
+            }),
+            
+            // Tableau villes
+            new Table({
+                width: { size: 9360, type: WidthType.DXA },
+                columnWidths: [1200, 2400, 1920, 1920, 1920],
+                rows: [
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1200, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 80, right: 80 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Rang", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 2400, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 80, right: 80 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Ville", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1920, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 80, right: 80 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "CA Total", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1920, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 80, right: 80 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Nb Patients", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1920, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 80, right: 80 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "CA/Patient", bold: true, color: "FFFFFF" })]
+                                })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders, width: { size: 1200, type: WidthType.DXA },
+                                shading: { fill: "FFE6E6", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "1", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 2400, type: WidthType.DXA },
+                                shading: { fill: "FFE6E6", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "Casablanca", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1920, type: WidthType.DXA },
+                                shading: { fill: "FFE6E6", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XXX DH")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1920, type: WidthType.DXA },
+                                shading: { fill: "FFE6E6", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("120")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1920, type: WidthType.DXA },
+                                shading: { fill: "FFE6E6", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XXX DH")] })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders, width: { size: 1200, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("2")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 2400, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("Salé")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1920, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XXX DH")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1920, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("40")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1920, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XXX DH")] })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders, width: { size: 1200, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("3")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 2400, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("Settat")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1920, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XXX DH")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1920, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("25")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1920, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XXX DH")] })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders, width: { size: 1200, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("4")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 2400, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("Rabat")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1920, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XXX DH")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1920, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("20")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1920, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XXX DH")] })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders, width: { size: 1200, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("5")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 2400, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("Mohammedia")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1920, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XXX DH")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1920, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("20")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1920, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XXX DH")] })]
+                            })
+                        ]
+                    })
+                ]
+            }),
+            
+            new Paragraph({ children: [new PageBreak()] }),
+            
+            // 6. ANALYSE CLIENTS
+            new Paragraph({
+                heading: HeadingLevel.HEADING_1,
+                children: [new TextRun("6. ANALYSE CLIENTS")]
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [new TextRun("👥 Profil de Consommation")]
+            }),
+            new Paragraph({
+                heading: HeadingLevel.HEADING_3,
+                children: [new TextRun("Statistiques Globales")]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun({ text: "225 patients ", bold: true }), new TextRun("actifs sur l'année")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun({ text: "Consommation moyenne : ", bold: true }), new TextRun("12.26 boîtes/an (conforme norme nationale)")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun({ text: "Dépense moyenne : ", bold: true }), new TextRun("500 DH/an/patient")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun({ text: "Écart-type : ", bold: true }), new TextRun("±XXX DH (variabilité forte)")],
+                spacing: { after: 240 }
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [new TextRun("📊 Segmentation RFM")]
+            }),
+            
+            // Tableau segments
+            new Table({
+                width: { size: 9360, type: WidthType.DXA },
+                columnWidths: [1870, 1870, 1870, 1870, 1880],
+                rows: [
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1870, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 80, right: 80 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Segment", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1870, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 80, right: 80 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Nb Clients", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1870, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 80, right: 80 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "CA Moyen", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1870, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 80, right: 80 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Fréquence Moy.", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1880, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 80, right: 80 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Stratégie", bold: true, color: "FFFFFF" })]
+                                })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders, width: { size: 1870, type: WidthType.DXA },
+                                shading: { fill: "FFD700", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "Gold", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1870, type: WidthType.DXA },
+                                shading: { fill: "FFD700", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XX")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1870, type: WidthType.DXA },
+                                shading: { fill: "FFD700", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun(">5000 DH")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1870, type: WidthType.DXA },
+                                shading: { fill: "FFD700", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XX achats")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1880, type: WidthType.DXA },
+                                shading: { fill: "FFD700", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "Rétention VIP", size: 20 })] })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders, width: { size: 1870, type: WidthType.DXA },
+                                shading: { fill: "C0C0C0", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "Silver", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1870, type: WidthType.DXA },
+                                shading: { fill: "C0C0C0", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XX")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1870, type: WidthType.DXA },
+                                shading: { fill: "C0C0C0", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("2000-5000 DH")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1870, type: WidthType.DXA },
+                                shading: { fill: "C0C0C0", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XX achats")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1880, type: WidthType.DXA },
+                                shading: { fill: "C0C0C0", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "Développement", size: 20 })] })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders, width: { size: 1870, type: WidthType.DXA },
+                                shading: { fill: "CD7F32", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "Bronze", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1870, type: WidthType.DXA },
+                                shading: { fill: "CD7F32", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XX")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1870, type: WidthType.DXA },
+                                shading: { fill: "CD7F32", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("<2000 DH")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1870, type: WidthType.DXA },
+                                shading: { fill: "CD7F32", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XX achats")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1880, type: WidthType.DXA },
+                                shading: { fill: "CD7F32", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "Activation", size: 20 })] })]
+                            })
+                        ]
+                    })
+                ]
+            }),
+            
+            new Paragraph({
+                spacing: { before: 240, after: 160 },
+                children: [new TextRun({ text: "📈 Indice de Concentration (Gini)", bold: true, size: 26 })]
+            }),
+            new Paragraph({
+                spacing: { after: 80 },
+                children: [new TextRun({ text: "Coefficient de Gini : 0.XXX", bold: true })]
+            }),
+            new Paragraph({
+                spacing: { after: 80 },
+                children: [
+                    new TextRun({ text: "Interprétation : ", bold: true }),
+                    new TextRun("XX% du CA généré par XX% des clients")
+                ]
+            }),
+            
+            new Paragraph({ children: [new PageBreak()] }),
+            
+            // 7. CHAÎNE LOGISTIQUE
+            new Paragraph({
+                heading: HeadingLevel.HEADING_1,
+                children: [new TextRun("7. ANALYSE DE LA CHAÎNE LOGISTIQUE")]
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [new TextRun("🚛 Analyse des Grossistes")]
+            }),
+            
+            // Tableau grossistes
+            new Table({
+                width: { size: 9360, type: WidthType.DXA },
+                columnWidths: [2340, 1560, 1560, 1560, 1560, 780],
+                rows: [
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 2340, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 80, right: 80 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Grossiste", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1560, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 80, right: 80 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Zone", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1560, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 80, right: 80 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Nb Pharma", bold: true, color: "FFFFFF" })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1560, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 80, right: 80 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Volume Livré", bold: true, color: "FFFFFF", size: 20 })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 1560, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 80, right: 80 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Capacité", bold: true, color: "FFFFFF", size: 20 })]
+                                })]
+                            }),
+                            new TableCell({
+                                borders: headerBorders,
+                                width: { size: 780, type: WidthType.DXA },
+                                shading: { fill: "2E75B6", type: ShadingType.CLEAR },
+                                margins: { top: 100, bottom: 100, left: 80, right: 80 },
+                                children: [new Paragraph({
+                                    children: [new TextRun({ text: "Taux", bold: true, color: "FFFFFF", size: 20 })]
+                                })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders, width: { size: 2340, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "COOPHARMA", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1560, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("Rabat-Salé")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1560, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("4")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1560, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XXX unités")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1560, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("50k/mois")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 780, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XX%")] })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders, width: { size: 2340, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "PHARMA 5", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1560, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("Casablanca")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1560, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("4")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1560, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XXX unités")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1560, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("80k/mois")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 780, type: WidthType.DXA },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XX%")] })]
+                            })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                borders, width: { size: 2340, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "MAGHREB PHARMA", bold: true })] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1560, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun({ text: "Mohammedia-Settat", size: 18 })] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1560, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("2")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1560, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XXX unités")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 1560, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("40k/mois")] })]
+                            }),
+                            new TableCell({
+                                borders, width: { size: 780, type: WidthType.DXA },
+                                shading: { fill: "F2F2F2", type: ShadingType.CLEAR },
+                                margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                                children: [new Paragraph({ children: [new TextRun("XX%")] })]
+                            })
+                        ]
+                    })
+                ]
+            }),
+            
+            new Paragraph({
+                spacing: { before: 240, after: 80 },
+                children: [new TextRun({ text: "🔍 Insights :", bold: true, size: 24 })]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("PHARMA 5 : Plus grande capacité, dessert Casablanca (zone dense)")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Tous les grossistes sont sous-utilisés ➡️ Potentiel d'optimisation logistique")],
+                spacing: { after: 240 }
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [new TextRun("📦 Gestion des Stocks")]
+            }),
+            new Paragraph({
+                spacing: { before: 160, after: 160 },
+                children: [
+                    new TextRun({ text: "🚨 XX pharmacies ", bold: true, color: "FF0000" }),
+                    new TextRun("en zone critique (stock < 800 unités)")
+                ]
+            }),
+            new Paragraph({
+                spacing: { after: 80 },
+                children: [
+                    new TextRun({ text: "➡️ Besoin de réapprovisionnement urgent", bold: true })
+                ]
+            }),
+            
+            new Paragraph({ children: [new PageBreak()] }),
+            
+            // 8. INSIGHTS STRATÉGIQUES
+            new Paragraph({
+                heading: HeadingLevel.HEADING_1,
+                children: [new TextRun("8. INSIGHTS STRATÉGIQUES")]
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [new TextRun("🎯 Synthèse des Découvertes Clés")]
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_3,
+                children: [new TextRun("1️⃣ Performance Commerciale")]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun({ text: "✅ ", color: "00AA00" }), new TextRun("CA total conforme aux attentes du secteur")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun({ text: "✅ ", color: "00AA00" }), new TextRun("Marges respectant strictement la réglementation")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun({ text: "⚠️ ", color: "FF8800" }), new TextRun("Concentration élevée : 20% produits = 80% CA")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                spacing: { after: 240 },
+                children: [
+                    new TextRun({ text: "➡️ Action : ", bold: true }),
+                    new TextRun("Optimiser assortiment sur produits phares")
+                ]
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_3,
+                children: [new TextRun("2️⃣ Géographie")]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun({ text: "✅ ", color: "00AA00" }), new TextRun("Casablanca domine (effet volume population)")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun({ text: "✅ ", color: "00AA00" }), new TextRun("Rentabilité homogène entre villes")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                spacing: { after: 240 },
+                children: [
+                    new TextRun({ text: "➡️ Action : ", bold: true }),
+                    new TextRun("Adapter assortiment aux zones secondaires")
+                ]
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_3,
+                children: [new TextRun("3️⃣ Clients")]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun({ text: "⚠️ ", color: "FF8800" }), new TextRun("Segmentation forte : clients VIP génèrent XX% du CA")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun({ text: "⚠️ ", color: "FF8800" }), new TextRun("Fidélité faible : XX% achètent 1 seule fois")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                spacing: { after: 240 },
+                children: [
+                    new TextRun({ text: "➡️ Action : ", bold: true }),
+                    new TextRun("Programme fidélité ciblé segments Silver/Gold")
+                ]
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_3,
+                children: [new TextRun("4️⃣ Supply Chain")]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun({ text: "✅ ", color: "00AA00" }), new TextRun("Grossistes sous-utilisés (capacité résiduelle)")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun({ text: "⚠️ ", color: "FF8800" }), new TextRun("XX pharmacies en rupture de stock potentielle")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                spacing: { after: 240 },
+                children: [
+                    new TextRun({ text: "➡️ Action : ", bold: true }),
+                    new TextRun("Réapprovisionnement prédictif + mutualisation stocks")
+                ]
+            }),
+            
+            new Paragraph({ children: [new PageBreak()] }),
+            
+            // 9. RECOMMANDATIONS
+            new Paragraph({
+                heading: HeadingLevel.HEADING_1,
+                children: [new TextRun("9. RECOMMANDATIONS STRATÉGIQUES")]
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [new TextRun("🚀 PLAN D'ACTION PRIORITAIRE")]
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_3,
+                children: [new TextRun({ text: "COURT TERME (0-3 mois)", color: "FF0000" })]
+            }),
+            
+            new Paragraph({
+                spacing: { before: 160, after: 120 },
+                children: [new TextRun({ text: "1. Gestion des Stocks 🔴 URGENT", bold: true, color: "FF0000" })]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Réapprovisionner XX pharmacies en zone critique")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Mettre en place alertes automatiques (seuil 800 unités)")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Mutualiser stocks entre pharmacies d'une même ville")],
+                spacing: { after: 240 }
+            }),
+            
+            new Paragraph({
+                spacing: { after: 120 },
+                children: [new TextRun({ text: "2. Optimisation Catalogue", bold: true })]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Analyser les 50% références à faible rotation")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Supprimer références dormantes (0 vente sur 6 mois)")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Renforcer stocks sur Top 20 produits (Pareto)")],
+                spacing: { after: 240 }
+            }),
+            
+            new Paragraph({
+                spacing: { after: 120 },
+                children: [new TextRun({ text: "3. Fidélisation Clients Bronze", bold: true })]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Identifier causes d'achat unique (enquête)")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Lancer campagne SMS/email de réactivation")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Offre promotionnelle ciblée (ex: -10% sur 2e achat)")],
+                spacing: { after: 240 }
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_3,
+                children: [new TextRun({ text: "MOYEN TERME (3-6 mois)", color: "FF8800" })]
+            }),
+            
+            new Paragraph({
+                spacing: { before: 160, after: 120 },
+                children: [new TextRun({ text: "4. Programme Fidélité Structuré", bold: true })]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Carte de fidélité digitale (points par achat)")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Avantages différenciés par segment (Gold/Silver/Bronze)")],
+                spacing: { after: 240 }
+            }),
+            
+            new Paragraph({
+                spacing: { after: 120 },
+                children: [new TextRun({ text: "5. Optimisation Logistique", bold: true })]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Négocier avec grossistes sur livraisons groupées")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Analyse prédictive : IA pour prévision demande")],
+                spacing: { after: 240 }
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_3,
+                children: [new TextRun({ text: "LONG TERME (6-12 mois)", color: "00AA00" })]
+            }),
+            
+            new Paragraph({
+                spacing: { before: 160, after: 120 },
+                children: [new TextRun({ text: "6. Digitalisation", bold: true })]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Plateforme e-commerce (ordonnances + conseil)")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Application mobile : rappel prise médicaments")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Chatbot IA pour conseil 24/7")],
+                spacing: { after: 240 }
+            }),
+            
+            new Paragraph({ children: [new PageBreak()] }),
+            
+            // 10. CONCLUSION
+            new Paragraph({
+                heading: HeadingLevel.HEADING_1,
+                children: [new TextRun("10. CONCLUSION")]
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [new TextRun("🎯 Synthèse Finale")]
+            }),
+            new Paragraph({
+                spacing: { before: 160, after: 240 },
+                children: [
+                    new TextRun("Cette analyse exploratoire révèle un "),
+                    new TextRun({ text: "secteur pharmaceutique marocain structuré", bold: true }),
+                    new TextRun(" et conforme aux normes réglementaires, avec des opportunités d'optimisation significatives.")
+                ]
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_3,
+                children: [new TextRun("✅ Points Forts")]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Respect strict des marges réglementées")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Couverture géographique équilibrée")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Consommation moyenne alignée sur standards nationaux")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Capacités logistiques sous-exploitées (marge de croissance)")],
+                spacing: { after: 240 }
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_3,
+                children: [new TextRun("⚠️ Axes d'Amélioration")]
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Gestion prédictive des stocks (XX pharmacies en risque)")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Fidélisation clients (taux réachat à améliorer)")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Optimisation catalogue (longue traîne à réduire)")],
+                spacing: { after: 80 }
+            }),
+            new Paragraph({
+                numbering: { reference: "bullets", level: 0 },
+                children: [new TextRun("Valorisation clients VIP (Pareto 20/80 à exploiter)")],
+                spacing: { after: 240 }
+            }),
+            
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                children: [new TextRun("📈 Perspectives")]
+            }),
+            new Paragraph({
+                spacing: { before: 160, after: 160 },
+                children: [
+                    new TextRun("Le secteur présente une "),
+                    new TextRun({ text: "base solide", bold: true }),
+                    new TextRun(" pour une transformation digitale. Les investissements recommandés (analytics, e-commerce, IA) peuvent générer un "),
+                    new TextRun({ text: "avantage compétitif durable", bold: true }),
+                    new TextRun(" tout en améliorant l'accès aux soins pour les patients.")
+                ]
+            }),
+            
+            new Paragraph({
+                spacing: { before: 360, after: 160 },
+                border: { top: { style: BorderStyle.SINGLE, size: 6, color: "2E75B6", space: 1 } },
+                children: [new TextRun("")]
+            }),
+            new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 240 },
+                children: [new TextRun({
+                    text: "Rapport confidentiel - Usage interne uniquement",
+                    italics: true,
+                    size: 20,
+                    color: "666666"
+                })]
+            }),
+            new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 80 },
+                children: [new TextRun({
+                    text: "Version 1.0 - Mai 2026",
+                    italics: true,
+                    size: 20,
+                    color: "666666"
+                })]
+            })
+        ]
+    }]
+});
+
+Packer.toBuffer(doc).then(buffer => {
+    fs.writeFileSync("/mnt/user-data/outputs/Rapport_EDA_Pharmaceutique_Maroc_2024.docx", buffer);
+    console.log("✅ Rapport Word généré avec succès!");
+});
