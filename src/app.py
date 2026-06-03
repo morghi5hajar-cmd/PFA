@@ -1,149 +1,101 @@
 """
-API Flask — Prévision de la demande de médicaments
-Projet PFA — ENSIAS 2024-2025
-Hajar MORGHI — Doua AIT TALEB
+API Flask - Prévision de la demande de médicaments
+PFA ENSIAS
 """
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import joblib
 import pandas as pd
-import numpy as np
+import joblib
 import os
 
 app = Flask(__name__)
-CORS(app)  # Autorise les requêtes depuis Next.js
+CORS(app)
 
 # ============================================================
-# CHARGEMENT DES MODÈLES
+# CHARGEMENT MODELE
 # ============================================================
-MODELE_DIR = r"C:\Users\aitta\Downloads\PFA.rar\PFA\PFA\modele\version2"
-models = {
-    "random_forest": joblib.load(os.path.join(MODELE_DIR, "rf.pkl")),
-    "xgboost":       joblib.load(os.path.join(MODELE_DIR, "xgb.pkl")),
-    "linear":        joblib.load(os.path.join(MODELE_DIR, "lr.pkl")),
-}
 
-print("✅ Modèles chargés avec succès")
+MODEL_PATH = r"C:\Users\aitta\Downloads\PFA.rar\PFA\PFA\modele\version2\xgb.pkl"
+
+model = joblib.load(MODEL_PATH)
+
+print("✅ Modèle XGBoost chargé")
 
 # ============================================================
-# VALEURS ACCEPTÉES
+# DONNÉES POUR LE FRONTEND
 # ============================================================
 
 PHARMACIES = [
-    "Pharmacie Casablanca 1", "Pharmacie Casablanca 2",
-    "Pharmacie Casablanca 3", "Pharmacie Casablanca 4",
-    "Pharmacie Rabat 1", "Pharmacie Rabat 2",
-    "Pharmacie Salé 1", "Pharmacie Salé 2",
-    "Pharmacie Mohammedia 1", "Pharmacie Settat 1"
+    "Pharmacie Casablanca 1",
+    "Pharmacie Casablanca 2",
+    "Pharmacie Casablanca 3",
+    "Pharmacie Casablanca 4",
+    "Pharmacie Rabat 1",
+    "Pharmacie Rabat 2",
+    "Pharmacie Salé 1",
+    "Pharmacie Salé 2",
+    "Pharmacie Mohammedia 1",
+    "Pharmacie Settat 1"
 ]
 
-CATEGORIES  = ["T1", "T2", "T3", "T4"]
-VILLES      = ["Casablanca", "Rabat", "Salé", "Mohammedia", "Settat"]
-REGIONS     = ["Casablanca-Settat", "Rabat-Salé-Kénitra"]
-SAISONS     = ["hiver", "printemps", "ete", "automne"]
+CATEGORIES = ["T1", "T2", "T3", "T4"]
+
+VILLES = [
+    "Casablanca",
+    "Rabat",
+    "Salé",
+    "Mohammedia",
+    "Settat"
+]
 
 # ============================================================
-# ROUTE — ACCUEIL
+# FONCTIONS
+# ============================================================
+
+def get_saison(mois):
+    if mois in [12, 1, 2]:
+        return "hiver"
+    elif mois in [3, 4, 5]:
+        return "printemps"
+    elif mois in [6, 7, 8]:
+        return "ete"
+    return "automne"
+
+
+def get_region(ville):
+    if ville in ["Rabat", "Salé"]:
+        return "Rabat-Salé-Kénitra"
+
+    return "Casablanca-Settat"
+
+
+# ============================================================
+# HOME
 # ============================================================
 
 @app.route("/", methods=["GET"])
 def home():
     return jsonify({
-        "message": "API Prévision Médicaments — ENSIAS PFA 2024-2025",
-        "status": "running",
-        "endpoints": {
-            "/predict": "POST — Prédire la quantité vendue",
-            "/models":  "GET  — Liste des modèles disponibles",
-            "/health":  "GET  — Vérifier l'état de l'API"
-        }
+        "message": "API Prévision Médicaments",
+        "status": "running"
     })
 
+
 # ============================================================
-# ROUTE — HEALTH CHECK
+# HEALTH
 # ============================================================
 
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({
         "status": "ok",
-        "models_loaded": list(models.keys())
+        "model": "XGBoost"
     })
 
-# ============================================================
-# ROUTE — LISTE DES MODÈLES
-# ============================================================
-
-@app.route("/models", methods=["GET"])
-def get_models():
-    return jsonify({
-        "models": list(models.keys()),
-        "default": "random_forest"
-    })
 
 # ============================================================
-# ROUTE — PRÉDICTION
-# ============================================================
-
-@app.route("/predict", methods=["POST"])
-def predict():
-    try:
-        data = request.get_json()
-
-        # ── Validation des champs requis ──────────────────────
-        required = ["pharmacie", "categorie", "ville", "region",
-                    "mois", "trimestre", "saison",
-                    "stock_moyen", "marge_moyenne", "pfht_moyen"]
-
-        for field in required:
-            if field not in data:
-                return jsonify({"error": f"Champ manquant : {field}"}), 400
-
-        # ── Choisir le modèle ─────────────────────────────────
-        model_name = data.get("model", "random_forest")
-        if model_name not in models:
-            return jsonify({"error": f"Modèle inconnu : {model_name}"}), 400
-
-        model = models[model_name]
-
-        # ── Construire le DataFrame d'entrée ──────────────────
-        input_df = pd.DataFrame([{
-            "pharmacie":      data["pharmacie"],
-            "categorie":      data["categorie"],
-            "ville":          data["ville"],
-            "region":         data["region"],
-            "mois":           int(data["mois"]),
-            "trimestre":      int(data["trimestre"]),
-            "saison":         data["saison"],
-            "nb_transactions": int(data.get("nb_transactions", 10)),
-            "ca_total":       float(data.get("ca_total", 500)),
-            "stock_moyen":    float(data["stock_moyen"]),
-            "marge_moyenne":  float(data["marge_moyenne"]),
-            "pfht_moyen":     float(data["pfht_moyen"]),
-        }])
-
-        # ── Prédiction ────────────────────────────────────────
-        prediction = model.predict(input_df)[0]
-        prediction = max(0, round(float(prediction), 2))
-
-        # ── Recommandation stock ──────────────────────────────
-        stock_securite     = round(prediction * 0.2, 2)
-        point_reappro      = round(prediction + stock_securite, 2)
-
-        return jsonify({
-            "status":              "success",
-            "model_used":          model_name,
-            "quantite_prevue":     prediction,
-            "stock_securite":      stock_securite,
-            "point_reapprovision": point_reappro,
-            "input":               data
-        })
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# ============================================================
-# ROUTE — OPTIONS DISPONIBLES (pour le frontend)
+# OPTIONS
 # ============================================================
 
 @app.route("/options", methods=["GET"])
@@ -151,16 +103,106 @@ def options():
     return jsonify({
         "pharmacies": PHARMACIES,
         "categories": CATEGORIES,
-        "villes":     VILLES,
-        "regions":    REGIONS,
-        "saisons":    SAISONS,
-        "mois":       list(range(1, 13)),
-        "trimestres": [1, 2, 3, 4]
+        "villes": VILLES,
+        "mois": list(range(1, 13))
     })
+
+
+# ============================================================
+# PREDICT
+# ============================================================
+
+@app.route("/predict", methods=["POST"])
+def predict():
+
+    try:
+
+        data = request.get_json()
+
+        required_fields = [
+            "pharmacie",
+            "categorie",
+            "ville",
+            "mois",
+            "stock_moyen",
+            "marge_moyenne",
+            "pfht_moyen"
+        ]
+
+        for field in required_fields:
+            if field not in data:
+                return jsonify({
+                    "error": f"Champ manquant : {field}"
+                }), 400
+
+        mois = int(data["mois"])
+
+        trimestre = (mois - 1) // 3 + 1
+        saison = get_saison(mois)
+        region = get_region(data["ville"])
+
+        input_df = pd.DataFrame([{
+            "pharmacie": data["pharmacie"],
+            "categorie": data["categorie"],
+            "ville": data["ville"],
+            "region": region,
+            "mois": mois,
+            "trimestre": trimestre,
+            "saison": saison,
+
+            # valeurs par défaut
+            "nb_transactions": 10,
+            "ca_total": 500,
+
+            "stock_moyen": float(data["stock_moyen"]),
+            "marge_moyenne": float(data["marge_moyenne"]),
+            "pfht_moyen": float(data["pfht_moyen"])
+        }])
+
+        prediction = float(model.predict(input_df)[0])
+
+        prediction = max(0, round(prediction, 2))
+
+        stock_securite = round(prediction * 0.20, 2)
+
+        point_reapprovisionnement = round(
+            prediction + stock_securite,
+            2
+        )
+
+        return jsonify({
+
+            "status": "success",
+
+            "quantite_prevue": prediction,
+
+            "stock_securite": stock_securite,
+
+            "point_reapprovisionnement":
+                point_reapprovisionnement,
+
+            "details": {
+                "saison": saison,
+                "trimestre": trimestre,
+                "region": region
+            }
+
+        })
+
+    except Exception as e:
+
+        return jsonify({
+            "error": str(e)
+        }), 500
+
 
 # ============================================================
 # LANCEMENT
 # ============================================================
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(
+        debug=True,
+        host="0.0.0.0",
+        port=5000
+    )
