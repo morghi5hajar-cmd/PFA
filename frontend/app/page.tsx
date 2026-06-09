@@ -139,10 +139,14 @@ export default function Home() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          pharmacie, categorie, ville, region, mois,
-          trimestre: getTrimestre(mois), saison,
-          stock_moyen: stockMoyen, marge_moyenne: margeMoyenne,
-          pfht_moyen: pfhtMoyen, model,
+          pharmacie,
+          categorie,
+          ville,
+          mois,
+          stock_moyen: stockMoyen,
+          marge_moyenne: margeMoyenne,
+          pfht_moyen: pfhtMoyen,
+          model,
         }),
       });
       const data = await res.json();

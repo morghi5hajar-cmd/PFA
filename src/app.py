@@ -1,13 +1,12 @@
 """
 API Flask - Prévision de la demande de médicaments
-PFA ENSIAS
+Version alignée avec ML clean (sans data leakage)
 """
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pandas as pd
 import joblib
-import os
 
 app = Flask(__name__)
 CORS(app)
@@ -16,38 +15,28 @@ CORS(app)
 # CHARGEMENT MODELE
 # ============================================================
 
-MODEL_PATH = r"C:\Users\aitta\Downloads\PFA.rar\PFA\PFA\modele\version2\xgb.pkl"
+models = {
+    "xgboost": joblib.load("modele/version2/xgb.pkl"),
+    "random_forest": joblib.load("modele/version2/rf.pkl"),
+    "linear": joblib.load("modele/version2/lr.pkl"),
+}
 
-model = joblib.load(MODEL_PATH)
-
-print("✅ Modèle XGBoost chargé")
+print("Modèles chargés")
 
 # ============================================================
-# DONNÉES POUR LE FRONTEND
+# LISTES FRONTEND
 # ============================================================
 
 PHARMACIES = [
     "Pharmacie Casablanca 1",
     "Pharmacie Casablanca 2",
-    "Pharmacie Casablanca 3",
-    "Pharmacie Casablanca 4",
     "Pharmacie Rabat 1",
-    "Pharmacie Rabat 2",
-    "Pharmacie Salé 1",
-    "Pharmacie Salé 2",
-    "Pharmacie Mohammedia 1",
-    "Pharmacie Settat 1"
+    "Pharmacie Salé 1"
 ]
 
 CATEGORIES = ["T1", "T2", "T3", "T4"]
 
-VILLES = [
-    "Casablanca",
-    "Rabat",
-    "Salé",
-    "Mohammedia",
-    "Settat"
-]
+VILLES = ["Casablanca", "Rabat", "Salé"]
 
 # ============================================================
 # FONCTIONS
@@ -66,9 +55,7 @@ def get_saison(mois):
 def get_region(ville):
     if ville in ["Rabat", "Salé"]:
         return "Rabat-Salé-Kénitra"
-
     return "Casablanca-Settat"
-
 
 # ============================================================
 # HOME
@@ -76,26 +63,10 @@ def get_region(ville):
 
 @app.route("/", methods=["GET"])
 def home():
-    return jsonify({
-        "message": "API Prévision Médicaments",
-        "status": "running"
-    })
-
+    return jsonify({"message": "API OK", "status": "running"})
 
 # ============================================================
-# HEALTH
-# ============================================================
-
-@app.route("/health", methods=["GET"])
-def health():
-    return jsonify({
-        "status": "ok",
-        "model": "XGBoost"
-    })
-
-
-# ============================================================
-# OPTIONS
+# OPTIONS FRONTEND
 # ============================================================
 
 @app.route("/options", methods=["GET"])
@@ -107,19 +78,18 @@ def options():
         "mois": list(range(1, 13))
     })
 
-
 # ============================================================
-# PREDICT
+# PREDICT (CORRIGÉ)
 # ============================================================
 
 @app.route("/predict", methods=["POST"])
 def predict():
 
     try:
-
         data = request.get_json()
 
-        required_fields = [
+        # champs obligatoires
+        required = [
             "pharmacie",
             "categorie",
             "ville",
@@ -129,18 +99,18 @@ def predict():
             "pfht_moyen"
         ]
 
-        for field in required_fields:
-            if field not in data:
-                return jsonify({
-                    "error": f"Champ manquant : {field}"
-                }), 400
+        for r in required:
+            if r not in data:
+                return jsonify({"error": f"Missing {r}"}), 400
 
         mois = int(data["mois"])
-
         trimestre = (mois - 1) // 3 + 1
         saison = get_saison(mois)
         region = get_region(data["ville"])
 
+        # ====================================================
+        #  FEATURES EXACTEMENT COMME TRAINING
+        # ====================================================
         input_df = pd.DataFrame([{
             "pharmacie": data["pharmacie"],
             "categorie": data["categorie"],
@@ -149,60 +119,39 @@ def predict():
             "mois": mois,
             "trimestre": trimestre,
             "saison": saison,
-
-            # valeurs par défaut
-            "nb_transactions": 10,
-            "ca_total": 500,
-
             "stock_moyen": float(data["stock_moyen"]),
             "marge_moyenne": float(data["marge_moyenne"]),
             "pfht_moyen": float(data["pfht_moyen"])
         }])
 
-        prediction = float(model.predict(input_df)[0])
+        model_name = data.get("model", "xgboost")
+        model = models[model_name]
 
+        prediction = float(model.predict(input_df)[0])
         prediction = max(0, round(prediction, 2))
 
-        stock_securite = round(prediction * 0.20, 2)
-
-        point_reapprovisionnement = round(
-            prediction + stock_securite,
-            2
-        )
+        stock_securite = round(prediction * 0.2, 2)
+        reappro = round(prediction + stock_securite, 2)
 
         return jsonify({
-
             "status": "success",
-
             "quantite_prevue": prediction,
-
             "stock_securite": stock_securite,
-
-            "point_reapprovisionnement":
-                point_reapprovisionnement,
-
+            "point_reapprovisionnement": reappro,
+            "model_used": model_name,
             "details": {
-                "saison": saison,
+                "mois": mois,
                 "trimestre": trimestre,
-                "region": region
-            }
-
+                "saison": saison,
+                "region": region}
         })
 
     except Exception as e:
-
-        return jsonify({
-            "error": str(e)
-        }), 500
-
+        return jsonify({"error": str(e)}), 500
 
 # ============================================================
-# LANCEMENT
+# RUN
 # ============================================================
 
 if __name__ == "__main__":
-    app.run(
-        debug=True,
-        host="0.0.0.0",
-        port=5000
-    )
+    app.run(debug=True, host="0.0.0.0", port=5000)

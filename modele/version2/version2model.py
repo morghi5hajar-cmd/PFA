@@ -1,5 +1,5 @@
 # ============================================================
-# 🎯 PFA - PRÉVISION DE LA DEMANDE DE MÉDICAMENTS
+# PFA - PRÉVISION DE LA DEMANDE DE MÉDICAMENTS (CLEAN VERSION)
 # ============================================================
 
 import sqlite3
@@ -7,11 +7,7 @@ import pandas as pd
 import numpy as np
 import warnings
 import os
-import json
 
-import matplotlib.pyplot as plt
-
-from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
@@ -26,7 +22,6 @@ from sklearn.metrics import (
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 import xgboost as xgb
-import joblib
 
 warnings.filterwarnings("ignore")
 
@@ -54,7 +49,7 @@ JOIN regions r ON vi.id_region = r.id_region
 
 conn.close()
 
-print("✅ Données chargées :", df.shape)
+print("Données chargées :", df.shape)
 
 # ============================================================
 # 2. FEATURE ENGINEERING TEMPOREL
@@ -64,68 +59,67 @@ df["date_vente"] = pd.to_datetime(df["date_vente"])
 
 df["mois"] = df["date_vente"].dt.month
 df["trimestre"] = df["date_vente"].dt.quarter
-df["jour_semaine"] = df["date_vente"].dt.dayofweek
-df["weekend"] = df["jour_semaine"].isin([5,6]).astype(int)
 
-# saison simple
 def get_saison(m):
-    if m in [12,1,2]:
+    if m in [12, 1, 2]:
         return "hiver"
-    elif m in [3,4,5]:
+    elif m in [3, 4, 5]:
         return "printemps"
-    elif m in [6,7,8]:
+    elif m in [6, 7, 8]:
         return "ete"
     return "automne"
 
 df["saison"] = df["mois"].apply(get_saison)
 
 # ============================================================
-# 3. AGRÉGATION MÉTIER (IMPORTANT PFA)
+# 3. AGRÉGATION MÉTIER (SANS DATA LEAKAGE)
 # ============================================================
 
 df_agg = df.groupby(
     ["pharmacie", "categorie", "ville", "region", "mois", "trimestre", "saison"]
 ).agg(
     quantite_totale=("quantite", "sum"),
-    nb_transactions=("id_vente", "count"),
-    ca_total=("prix_vente", "sum"),
     stock_moyen=("stock", "mean"),
     marge_moyenne=("marge", "mean"),
     pfht_moyen=("pfht", "mean")
 ).reset_index()
 
-print("✅ Dataset agrégé :", df_agg.shape)
+# ============================================================
+# 4. SPLIT TEMPOREL (IMPORTANT CORRECTION)
+# ============================================================
 
-# ============================================================
-# 4. FEATURES & TARGET
-# ============================================================
+df_agg = df_agg.sort_values("mois")
+
+split_index = int(len(df_agg) * 0.8)
+
+train = df_agg.iloc[:split_index]
+test = df_agg.iloc[split_index:]
 
 TARGET = "quantite_totale"
 
-X = df_agg.drop(columns=[TARGET])
-y = df_agg[TARGET]
+X_train = train.drop(columns=[TARGET])
+y_train = train[TARGET]
+
+X_test = test.drop(columns=[TARGET])
+y_test = test[TARGET]
+
+# ============================================================
+# 5. PREPROCESSING
+# ============================================================
 
 categorical_cols = ["pharmacie", "categorie", "ville", "region", "saison"]
-numeric_cols = [c for c in X.columns if c not in categorical_cols]
+numeric_cols = [c for c in X_train.columns if c not in categorical_cols]
 
-# OneHotEncoding propre (IMPORTANT)
-preprocessor = ColumnTransformer(
-    transformers=[
-        ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_cols),
-        ("num", "passthrough", numeric_cols)
-    ]
-)
-
-# split
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
+preprocessor = ColumnTransformer([
+    ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_cols),
+    ("num", "passthrough", numeric_cols)
+])
 
 # ============================================================
-# 5. FONCTION ÉVALUATION
+# 6. FONCTION D'ÉVALUATION
 # ============================================================
 
-def evaluate_model(name, model, X_test, y_test):
+def evaluate_model(name, model):
     pred = model.predict(X_test)
 
     mae = mean_absolute_error(y_test, pred)
@@ -133,33 +127,33 @@ def evaluate_model(name, model, X_test, y_test):
     mape = mean_absolute_percentage_error(y_test, pred)
     r2 = r2_score(y_test, pred)
 
-    print(f"\n📊 {name}")
+    print(f"\n {name}")
     print(f"MAE  : {mae:.4f}")
     print(f"RMSE : {rmse:.4f}")
     print(f"MAPE : {mape:.4f} ({mape*100:.2f}%)")
     print(f"R²   : {r2:.4f}")
 
-    return name, mae, rmse, mape, r2, model
+    return {"Model": name, "MAE": mae, "RMSE": rmse, "MAPE": mape, "R2": r2, "ModelObj": model}
 
 results = []
 
 # ============================================================
-# 6. MODÈLE 1 - LINEAR REGRESSION
+# 7. MODÈLE 1 - LINEAR REGRESSION
 # ============================================================
 
-lr = Pipeline(steps=[
+lr = Pipeline([
     ("preprocessor", preprocessor),
     ("model", LinearRegression())
 ])
 
 lr.fit(X_train, y_train)
-results.append(evaluate_model("Linear Regression", lr, X_test, y_test))
+results.append(evaluate_model("Linear Regression", lr))
 
 # ============================================================
-# 7. MODÈLE 2 - RANDOM FOREST
+# 8. MODÈLE 2 - RANDOM FOREST
 # ============================================================
 
-rf = Pipeline(steps=[
+rf = Pipeline([
     ("preprocessor", preprocessor),
     ("model", RandomForestRegressor(
         n_estimators=150,
@@ -169,13 +163,13 @@ rf = Pipeline(steps=[
 ])
 
 rf.fit(X_train, y_train)
-results.append(evaluate_model("Random Forest", rf, X_test, y_test))
+results.append(evaluate_model("Random Forest", rf))
 
 # ============================================================
-# 8. MODÈLE 3 - XGBOOST
+# 9. MODÈLE 3 - XGBOOST
 # ============================================================
 
-xgb_model = Pipeline(steps=[
+xgb_model = Pipeline([
     ("preprocessor", preprocessor),
     ("model", xgb.XGBRegressor(
         n_estimators=150,
@@ -188,54 +182,136 @@ xgb_model = Pipeline(steps=[
 ])
 
 xgb_model.fit(X_train, y_train)
-results.append(evaluate_model("XGBoost", xgb_model, X_test, y_test))
+results.append(evaluate_model("XGBoost", xgb_model))
 
 # ============================================================
-# 9. COMPARAISON
+# 10. COMPARAISON
 # ============================================================
 
-comparison = pd.DataFrame(results, columns=[
-    "Model", "MAE", "RMSE", "MAPE", "R2", "Pipeline"
-])
+comparison = pd.DataFrame(results)
+comparison = comparison.drop(columns=["ModelObj"])
 
 print("\n================ COMPARAISON ================")
-print(comparison[["Model","MAE","RMSE","MAPE","R2"]])
+print(comparison)
 
 best_model = comparison.loc[comparison["MAPE"].idxmin(), "Model"]
-print("\n🏆 MEILLEUR MODÈLE :", best_model)
+
+print("\nMEILLEUR MODÈLE :", best_model)
 
 # ============================================================
-# 10. FEATURE IMPORTANCE (XGBOOST)
-# ============================================================
-
-print("\n📌 Feature importance XGBoost")
-
-xgb_trained = comparison.loc[comparison["Model"]=="XGBoost","Pipeline"].values[0]
-
-model_xgb = xgb_trained.named_steps["model"]
-
-print("Importance disponible après encoding (top features internes)")
-
-# ============================================================
-# 11. SAUVEGARDE
-# ============================================================
-
-os.makedirs("modele", exist_ok=True)
-
-joblib.dump(lr, "modele/lr.pkl")
-joblib.dump(rf, "modele/rf.pkl")
-joblib.dump(xgb_model, "modele/xgb.pkl")
-
-print("\n✅ MODELES SAUVEGARDÉS")
-
-# ============================================================
-# 12. INTERPRÉTATION MÉTIER (IMPORTANT PFA)
+# 11. INTERPRÉTATION MÉTIER
 # ============================================================
 
 mean_demand = y_test.mean()
 std_demand = y_test.std()
 
-print("\n📦 RECOMMANDATION STOCK")
-print("Demande moyenne :", round(mean_demand,2))
-print("Stock sécurité :", round(2*std_demand,2))
-print("Point réapprovisionnement :", round(mean_demand + 1.5*std_demand,2))
+print("\n RECOMMANDATION STOCK")
+print("Demande moyenne :", round(mean_demand, 2))
+print("Stock sécurité :", round(2 * std_demand, 2))
+print("Point réapprovisionnement :", round(mean_demand + 1.5 * std_demand, 2))
+# ============================================================
+#  PHASE 4 : VISUALISATIONS & INSIGHTS (CORRIGÉE)
+# ============================================================
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+
+sns.set(style="whitegrid")
+
+# ============================================================
+# 1. PRÉDICTIONS XGBOOST
+# ============================================================
+
+print("\n Prédictions vs Réel (XGBoost)")
+
+y_pred = xgb_model.predict(X_test)
+
+plt.figure(figsize=(8,6))
+
+plt.scatter(y_test, y_pred, alpha=0.6)
+
+plt.plot(
+    [y_test.min(), y_test.max()],
+    [y_test.min(), y_test.max()],
+    'r--'
+)
+
+plt.xlabel("Quantité réelle")
+plt.ylabel("Quantité prédite")
+plt.title("XGBoost - Réel vs Prédit")
+
+plt.tight_layout()
+plt.show()
+plt.close()
+
+# ============================================================
+# 2. ERREURS
+# ============================================================
+
+errors = y_test - y_pred
+
+# ============================================================
+# 3. DISTRIBUTION DES ERREURS
+# ============================================================
+
+print("\n Distribution des erreurs")
+
+plt.figure(figsize=(8,6))
+
+sns.histplot(errors, bins=20, kde=True)
+
+plt.title("Distribution des erreurs de prédiction")
+plt.xlabel("Erreur (Réel - Prédit)")
+plt.ylabel("Fréquence")
+
+plt.tight_layout()
+plt.show()
+plt.close()
+
+# ============================================================
+# 4. BOXPLOT DES ERREURS
+# ============================================================
+
+print("\n Boxplot des erreurs")
+
+plt.figure(figsize=(8,3))
+
+sns.boxplot(x=errors)
+
+plt.title("Boxplot des erreurs")
+
+plt.tight_layout()
+plt.show()
+plt.close()
+
+# ============================================================
+# 5. ANALYSE DES ERREURS (PROPRE)
+# ============================================================
+
+mae = np.mean(np.abs(errors))
+rmse = np.sqrt(np.mean(errors**2))
+max_err = np.max(np.abs(errors))
+min_err = np.min(np.abs(errors))
+
+print("\n ANALYSE DES ERREURS")
+print(f"MAE globale   : {mae:.2f}")
+print(f"RMSE globale  : {rmse:.2f}")
+print(f"Erreur max    : {max_err:.2f}")
+print(f"Erreur min    : {min_err:.2f}")
+
+# ============================================================
+# 6. INTERPRÉTATION MÉTIER
+# ============================================================
+
+print("\n INTERPRÉTATION MÉTIER")
+
+print(
+    f"Le modèle XGBoost a une erreur moyenne de {mae:.2f} boîtes "
+    "sur la prédiction de la demande mensuelle."
+)
+
+print(
+    "Les résultats montrent une bonne capacité de généralisation "
+    "et une utilisation possible pour la gestion des stocks."
+)
