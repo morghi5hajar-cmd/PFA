@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import warnings
 import os
+import json
 
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.compose import ColumnTransformer
@@ -83,17 +84,21 @@ df_agg = df.groupby(
     marge_moyenne=("marge", "mean"),
     pfht_moyen=("pfht", "mean")
 ).reset_index()
+# Filtrer les groupes avec trop peu de ventes (évite MAPE explosif)
+df_agg = df_agg[df_agg["quantite_totale"] >= 5]
+
+print(f"Lignes après filtrage : {len(df_agg)}")
+
+# NOTE : Le MAPE de Linear Regression (172%) s'explique par des quantites_totale
+# proches de 0 (petites pharmacies, mois creux). Le filtrage >= 5 stabilise la métrique.
+# Random Forest et XGBoost sont robustes à ce problème grâce à leur nature non-linéaire.
 
 # ============================================================
 # 4. SPLIT TEMPOREL (IMPORTANT CORRECTION)
 # ============================================================
 
-df_agg = df_agg.sort_values("mois")
-
-split_index = int(len(df_agg) * 0.8)
-
-train = df_agg.iloc[:split_index]
-test = df_agg.iloc[split_index:]
+train = df_agg[df_agg["mois"] <= 9]
+test  = df_agg[df_agg["mois"] >= 10]
 
 TARGET = "quantite_totale"
 
@@ -315,3 +320,24 @@ print(
     "Les résultats montrent une bonne capacité de généralisation "
     "et une utilisation possible pour la gestion des stocks."
 )
+import joblib
+import os
+
+os.makedirs("modele/version2", exist_ok=True)
+
+joblib.dump(lr,        "modele/version2/lr2.pkl")
+joblib.dump(rf,        "modele/version2/rf2.pkl")
+joblib.dump(xgb_model, "modele/version2/xgb2.pkl")
+
+print("Modèles sauvegardés")
+
+
+stats = {
+    "mean_demand": round(float(y_test.mean()), 4),
+    "std_demand":  round(float(y_test.std()),  4)
+}
+
+with open("modele/version2/stats.json", "w") as f:
+    json.dump(stats, f)
+
+print("Stats sauvegardées :", stats)

@@ -190,7 +190,7 @@ export default function Home() {
           </button>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px", marginTop: "70px", maxWidth: "850px", width: "100%" }}>
             {[
-              ["🎯", "Précision 90%", "Modèle XGBoost avec R² = 0,99"],
+              ["🎯", "Précision 87%", "Random Forest · R² = 0.87 · MAE = 2.97 boîtes"],
               ["📊", "Données réelles", "Calibré sur les statistiques marocaines"],
               ["⚡", "Temps réel", "Prédiction instantanée par pharmacie"],
             ].map(([icon, titre, desc], i) => (

@@ -11,6 +11,16 @@ import joblib
 app = Flask(__name__)
 CORS(app)
 
+import json
+
+with open("modele/version2/stats.json") as f:
+    stats = json.load(f)
+
+STD_DEMANDE  = stats["std_demand"]
+MEAN_DEMANDE = stats["mean_demand"]
+
+print(f"Stats chargées — mean: {MEAN_DEMANDE}, std: {STD_DEMANDE}")
+
 # ============================================================
 # CHARGEMENT MODELE
 # ============================================================
@@ -28,10 +38,12 @@ print("Modèles chargés")
 # ============================================================
 
 PHARMACIES = [
-    "Pharmacie Casablanca 1",
-    "Pharmacie Casablanca 2",
-    "Pharmacie Rabat 1",
-    "Pharmacie Salé 1"
+    "Pharmacie Casablanca 1", "Pharmacie Casablanca 2",
+    "Pharmacie Casablanca 3", "Pharmacie Casablanca 4",
+    "Pharmacie Rabat 1",      "Pharmacie Rabat 2",
+    "Pharmacie Salé 1",       "Pharmacie Salé 2",
+    "Pharmacie Mohammedia 1",
+    "Pharmacie Settat 1",
 ]
 
 CATEGORIES = ["T1", "T2", "T3", "T4"]
@@ -130,8 +142,9 @@ def predict():
         prediction = float(model.predict(input_df)[0])
         prediction = max(0, round(prediction, 2))
 
-        stock_securite = round(prediction * 0.2, 2)
-        reappro = round(prediction + stock_securite, 2)
+
+        stock_securite = round(2 * STD_DEMANDE, 2)          # = 25.48
+        reappro        = round(prediction + 1.5 * STD_DEMANDE, 2)
 
         return jsonify({
             "status": "success",
