@@ -26,9 +26,9 @@ print(f"Stats chargées — mean: {MEAN_DEMANDE}, std: {STD_DEMANDE}")
 # ============================================================
 
 models = {
-    "xgboost": joblib.load("../modele/version2/xgb2.pkl"),
-    "random_forest": joblib.load("../modele/version2/rf2.pkl"),
-    "linear": joblib.load("../modele/version2/lr2.pkl"),
+    "xgboost": joblib.load("../modele/version2/xgb.pkl"),
+    "random_forest": joblib.load("../modele/version2/rf.pkl"),
+    "linear": joblib.load("../modele/version2/lr.pkl"),
 }
 
 print("Modèles chargés")
