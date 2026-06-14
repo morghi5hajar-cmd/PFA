@@ -49,7 +49,8 @@ interface Result {
   model_used: string;
 }
 
-const GRAD = "linear-gradient(90deg, #0ea5e9, #6366f1)";
+// Gradient b l-khdar l-gham9 w l-fatih
+const GRAD = "linear-gradient(90deg, #064e3b, #059669)";
 
 const labelStyle: React.CSSProperties = { color: "#475569", fontSize: "13px", fontWeight: 600, display: "block", marginBottom: "6px" };
 const inputStyle: React.CSSProperties = {
@@ -162,7 +163,7 @@ export default function Home() {
   const Nav = ({ showCta = true }: { showCta?: boolean }) => (
     <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 48px", background: "white", borderBottom: "1px solid #eef0f2" }}>
       <div onClick={() => setPage("accueil")} style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>
-        <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: GRAD, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px" }}>💊</div>
+        <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: GRAD, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", color: "white", fontWeight: "bold" }}>✚</div>
         <span style={{ fontWeight: 700, fontSize: "16px", color: "#0f172a" }}>PharmaPredict</span>
       </div>
       {showCta && (
@@ -190,12 +191,11 @@ export default function Home() {
           </button>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px", marginTop: "70px", maxWidth: "850px", width: "100%" }}>
             {[
-              ["🎯", "Précision 87%", "Random Forest · R² = 0.87 · MAE = 2.97 boîtes"],
-              ["📊", "Données réelles", "Calibré sur les statistiques marocaines"],
-              ["⚡", "Temps réel", "Prédiction instantanée par pharmacie"],
-            ].map(([icon, titre, desc], i) => (
+              ["Précision 87%", "Random Forest · R² = 0.87 · MAE = 2.97 boîtes"],
+              ["Données réelles", "Calibré sur les statistiques marocaines"],
+              ["Temps réel", "Prédiction instantanée par pharmacie"],
+            ].map(([titre, desc], i) => (
               <div key={i} style={{ padding: "24px", background: "#fafbfc", border: "1px solid #eef0f2", borderRadius: "14px", textAlign: "left" }}>
-                <div style={{ fontSize: "28px", marginBottom: "12px" }}>{icon}</div>
                 <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#0f172a", margin: "0 0 6px" }}>{titre}</h3>
                 <p style={{ fontSize: "14px", color: "#64748b", margin: 0, lineHeight: 1.5 }}>{desc}</p>
               </div>
@@ -213,7 +213,7 @@ export default function Home() {
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px" }}>
           <div style={{ width: "100%", maxWidth: "420px", background: "white", border: "1px solid #eef0f2", borderRadius: "20px", padding: "36px", boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
             <div style={{ textAlign: "center", marginBottom: "26px" }}>
-              <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: GRAD, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "24px", marginBottom: "14px" }}>💊</div>
+              <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: GRAD, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "24px", color: "white", fontWeight: "bold", marginBottom: "14px" }}>✚</div>
               <h1 style={{ fontSize: "24px", fontWeight: 800, color: "#0f172a", margin: "0 0 6px" }}>
                 {authMode === "connexion" ? "Bienvenue" : "Créer un compte"}
               </h1>
@@ -260,7 +260,7 @@ export default function Home() {
 
             <p style={{ textAlign: "center", color: "#64748b", fontSize: "13px", marginTop: "18px", marginBottom: 0 }}>
               {authMode === "connexion" ? "Pas encore de compte ? " : "Déjà un compte ? "}
-              <span onClick={() => setAuthMode(authMode === "connexion" ? "inscription" : "connexion")} style={{ color: "#0ea5e9", fontWeight: 600, cursor: "pointer" }}>
+              <span onClick={() => setAuthMode(authMode === "connexion" ? "inscription" : "connexion")} style={{ color: "#059669", fontWeight: 600, cursor: "pointer" }}>
                 {authMode === "connexion" ? "S'inscrire" : "Se connecter"}
               </span>
             </p>
@@ -274,7 +274,7 @@ export default function Home() {
     <main style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
       <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 48px", background: "white", borderBottom: "1px solid #eef0f2" }}>
         <div onClick={() => setPage("accueil")} style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>
-          <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: GRAD, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px" }}>💊</div>
+          <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: GRAD, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", color: "white", fontWeight: "bold" }}>✚</div>
           <span style={{ fontWeight: 700, fontSize: "16px", color: "#0f172a" }}>PharmaPredict</span>
         </div>
         <button onClick={() => setPage("login")} style={{ padding: "8px 18px", background: "transparent", border: "1px solid #cbd5e1", borderRadius: "8px", color: "#334155", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>Déconnexion</button>
@@ -311,17 +311,16 @@ export default function Home() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             {error && (
-              <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "16px", padding: "20px", color: "#dc2626", fontSize: "14px" }}>⚠️ {error}</div>
+              <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "16px", padding: "20px", color: "#dc2626", fontSize: "14px" }}>{error}</div>
             )}
             {!result && !error && (
               <div style={{ background: "white", border: "1px dashed #cbd5e1", borderRadius: "18px", padding: "60px 20px", textAlign: "center", color: "#94a3b8" }}>
-                <div style={{ fontSize: "48px", marginBottom: "16px" }}>💊</div>
                 <p>Remplissez les paramètres et lancez la prédiction</p>
               </div>
             )}
             {result && (
               <>
-                <div style={{ background: "linear-gradient(135deg, #f0f9ff, #eef2ff)", border: "1px solid #bae6fd", borderRadius: "18px", padding: "28px", textAlign: "center" }}>
+                <div style={{ background: "linear-gradient(135deg, #f0fdf4, #e6f4ea)", border: "1px solid #bbf7d0", borderRadius: "18px", padding: "28px", textAlign: "center" }}>
                   <p style={{ color: "#64748b", fontSize: "13px", margin: "0 0 8px", textTransform: "uppercase", letterSpacing: "1px" }}>Quantité prévue</p>
                   <div style={{ fontSize: "64px", fontWeight: 800, background: GRAD, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", lineHeight: 1 }}>
                     {result.quantite_prevue}
@@ -331,19 +330,17 @@ export default function Home() {
                 <div style={{ background: "white", border: "1px solid #eef0f2", borderRadius: "16px", padding: "20px 24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <p style={{ color: "#64748b", fontSize: "13px", margin: "0 0 4px" }}>Stock de sécurité</p>
-                    <p style={{ color: "#d97706", fontSize: "24px", fontWeight: 700, margin: 0 }}>{result.stock_securite} boîtes</p>
+                    <p style={{ color: "#059669", fontSize: "24px", fontWeight: 700, margin: 0 }}>{result.stock_securite} boîtes</p>
                   </div>
-                  <div style={{ fontSize: "32px" }}>🛡️</div>
                 </div>
                 <div style={{ background: "white", border: "1px solid #eef0f2", borderRadius: "16px", padding: "20px 24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <p style={{ color: "#64748b", fontSize: "13px", margin: "0 0 4px" }}>Point de réapprovisionnement</p>
-                    <p style={{ color: "#059669", fontSize: "24px", fontWeight: 700, margin: 0 }}>{result.point_reapprovisionnement} boîtes</p>
+                    <p style={{ color: "#064e3b", fontSize: "24px", fontWeight: 700, margin: 0 }}>{result.point_reapprovisionnement} boîtes</p>
                   </div>
-                  <div style={{ fontSize: "32px" }}>📦</div>
                 </div>
                 <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "16px", padding: "16px 20px", color: "#15803d", fontSize: "13px", lineHeight: 1.6 }}>
-                  <strong>💡 Recommandation :</strong> Commandez dès que votre stock descend sous <strong>{result.point_reapprovisionnement} boîtes</strong>. Maintenez un stock de sécurité de <strong>{result.stock_securite} boîtes</strong>.
+                  <strong>Recommandation :</strong> Commandez dès que votre stock descend sous <strong>{result.point_reapprovisionnement} boîtes</strong>. Maintenez un stock de sécurité de <strong>{result.stock_securite} boîtes</strong>.
                 </div>
               </>
             )}
