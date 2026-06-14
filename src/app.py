@@ -48,7 +48,7 @@ PHARMACIES = [
 
 CATEGORIES = ["T1", "T2", "T3", "T4"]
 
-VILLES = ["Casablanca", "Rabat", "Salé"]
+VILLES = ["Casablanca", "Rabat", "Salé", "Mohammedia", "Settat"]
 
 # ============================================================
 # FONCTIONS
@@ -136,7 +136,7 @@ def predict():
             "pfht_moyen": float(data["pfht_moyen"])
         }])
 
-        model_name = data.get("model", "xgboost")
+        model_name = data.get("model", "random_forest")
         model = models[model_name]
 
         prediction = float(model.predict(input_df)[0])
@@ -167,4 +167,4 @@ def predict():
 # ============================================================
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(debug=True, host="0.0.0.0", port=5000) 
