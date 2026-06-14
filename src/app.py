@@ -13,7 +13,7 @@ CORS(app)
 
 import json
 
-with open("../modele/version2/stats.json")as f:
+with open("modele/version2/stats.json")as f:
     stats = json.load(f)
 
 STD_DEMANDE  = stats["std_demand"]
@@ -26,9 +26,9 @@ print(f"Stats chargées — mean: {MEAN_DEMANDE}, std: {STD_DEMANDE}")
 # ============================================================
 
 models = {
-    "xgboost": joblib.load("../modele/version2/xgb.pkl"),
-    "random_forest": joblib.load("../modele/version2/rf.pkl"),
-    "linear": joblib.load("../modele/version2/lr.pkl"),
+    "xgboost": joblib.load("modele/version2/xgb.pkl"),
+    "random_forest": joblib.load("modele/version2/rf.pkl"),
+    "linear": joblib.load("modele/version2/lr.pkl"),
 }
 
 print("Modèles chargés")
@@ -143,8 +143,8 @@ def predict():
         prediction = max(0, round(prediction, 2))
 
 
-        stock_securite = round(2 * STD_DEMANDE, 2)          # = 25.48
-        reappro        = round(prediction + 1.5 * STD_DEMANDE, 2)
+        stock_securite = round(prediction * 0.2, 2)
+        reappro        = round(prediction + prediction * 0.2, 2)
 
         return jsonify({
             "status": "success",
