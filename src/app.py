@@ -13,7 +13,7 @@ CORS(app)
 
 import json
 
-with open("modele/version2/stats.json")as f:
+with open("c:\\Users\\hp\\OneDrive\\Documents\\PFA\\modele\\version2\\stats.json")as f:
     stats = json.load(f)
 
 STD_DEMANDE  = stats["std_demand"]
@@ -26,9 +26,9 @@ print(f"Stats chargées — mean: {MEAN_DEMANDE}, std: {STD_DEMANDE}")
 # ============================================================
 
 models = {
-    "xgboost": joblib.load("modele/version2/xgb.pkl"),
-    "random_forest": joblib.load("modele/version2/rf.pkl"),
-    "linear": joblib.load("modele/version2/lr.pkl"),
+    "xgboost": joblib.load("c:\\Users\\hp\\OneDrive\\Documents\\PFA\\modele\\version2\\xgb.pkl"),
+    "random_forest": joblib.load("c:\\Users\\hp\\OneDrive\\Documents\\PFA\\modele\\version2\\rf.pkl"),
+    "linear": joblib.load("c:\\Users\\hp\\OneDrive\\Documents\\PFA\\modele\\version2\\lr.pkl"),
 }
 
 print("Modèles chargés")
