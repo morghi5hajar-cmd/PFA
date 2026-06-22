@@ -191,8 +191,8 @@ export default function Home() {
           </button>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px", marginTop: "70px", maxWidth: "850px", width: "100%" }}>
             {[
-              ["Précision 78,6%", "Random Forest · R² = 0.786 · MAE = 3,91 boîtes"],
-              ["Données calibrées sur les statistiques marocaines"],
+              ["Précision 78.6%", "Random Forest · R² = 0.786 · MAE = 3.91 boîtes"],
+              ["Données réelles", "Calibré sur les statistiques marocaines"],
               ["Temps réel", "Prédiction instantanée par pharmacie"],
             ].map(([titre, desc], i) => (
               <div key={i} style={{ padding: "24px", background: "#fafbfc", border: "1px solid #eef0f2", borderRadius: "14px", textAlign: "left" }}>
